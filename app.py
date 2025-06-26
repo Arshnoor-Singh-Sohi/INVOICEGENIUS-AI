@@ -10,6 +10,7 @@ import io
 import zipfile
 import logging
 from pathlib import Path
+import base64
 
 # Import our custom modules
 from config import Config
@@ -18,8 +19,6 @@ from utils.database import DatabaseManager
 from utils.export_utils import ExportManager
 from utils.validators import InputValidator
 from utils.analytics import AnalyticsEngine
-
-
 
 # Configure logging
 logging.basicConfig(
@@ -34,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class InvoiceGeniusApp:
     def __init__(self):
-        """Initialize the InvoiceGenius AI application"""
+        """Initialize the InvoiceGenius AI application with session state management"""
         self.config = Config()
         self.processor = InvoiceProcessor()
         self.db_manager = DatabaseManager()
@@ -42,9 +41,29 @@ class InvoiceGeniusApp:
         self.validator = InputValidator()
         self.analytics = AnalyticsEngine(self.db_manager)
         
+        # Initialize session state
+        self._initialize_session_state()
+        
         # Ensure required directories exist
         self._create_directories()
+    
+    def _initialize_session_state(self):
+        """Initialize session state variables to persist data across refreshes"""
+        if 'processed_invoices' not in st.session_state:
+            st.session_state.processed_invoices = []
         
+        if 'processing_complete' not in st.session_state:
+            st.session_state.processing_complete = False
+        
+        if 'last_export_time' not in st.session_state:
+            st.session_state.last_export_time = None
+        
+        if 'export_files' not in st.session_state:
+            st.session_state.export_files = {}
+        
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = "Invoice Processing"
+    
     def _create_directories(self):
         """Create necessary directories if they don't exist"""
         directories = ['exports', 'logs', 'data', 'assets']
@@ -111,6 +130,43 @@ class InvoiceGeniusApp:
             border-radius: 5px;
             border: 1px solid #f5c6cb;
         }
+        
+        .download-button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .download-button:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .export-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .persistent-data-info {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+            margin: 1rem 0;
+        }
         </style>
         """
         st.markdown(css, unsafe_allow_html=True)
@@ -125,11 +181,11 @@ class InvoiceGeniusApp:
         """, unsafe_allow_html=True)
     
     def render_sidebar(self):
-        """Simple sidebar without complex state management"""
+        """Enhanced sidebar with session state tracking"""
         with st.sidebar:
             st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
             
-            # Simple navigation
+            # Navigation with session state persistence
             page = st.selectbox(
                 "📊 Navigation", 
                 [
@@ -139,8 +195,26 @@ class InvoiceGeniusApp:
                     "Export Center",
                     "Settings"
                 ],
-                key="main_navigation_select"
+                key="main_navigation_select",
+                index=["Invoice Processing", "Analytics Dashboard", "Batch Processing", "Export Center", "Settings"].index(st.session_state.current_page)
             )
+            
+            # Update session state
+            st.session_state.current_page = page
+            
+            # Show persistent data info
+            if st.session_state.processed_invoices:
+                st.markdown('<div class="persistent-data-info">', unsafe_allow_html=True)
+                st.markdown("**📊 Processed Data Available**")
+                st.write(f"• {len(st.session_state.processed_invoices)} invoices ready")
+                st.write("• Data persists across page changes")
+                if st.button("🗑️ Clear Session Data", key="clear_session"):
+                    st.session_state.processed_invoices = []
+                    st.session_state.processing_complete = False
+                    st.session_state.export_files = {}
+                    st.success("Session data cleared!")
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
             
             # Processing Settings
             st.subheader("🔧 Processing Settings")
@@ -189,7 +263,7 @@ class InvoiceGeniusApp:
             }
     
     def render_invoice_processing_page(self, settings):
-        """Simple invoice processing page"""
+        """Enhanced invoice processing page with session state management"""
         st.subheader("📄 Invoice Processing")
         
         # Create columns for layout
@@ -214,6 +288,11 @@ class InvoiceGeniusApp:
             
             if uploaded_files:
                 if st.button("🚀 Process Invoices", type="primary", key="main_process_button"):
+                    # Clear previous results
+                    st.session_state.processed_invoices = []
+                    st.session_state.processing_complete = False
+                    
+                    # Process files
                     self._process_uploaded_files(uploaded_files, custom_prompt, settings)
             
         with col2:
@@ -224,9 +303,21 @@ class InvoiceGeniusApp:
             st.metric("Total Processed", total_processed)
             st.metric("Today", len(today_processed))
             st.metric("Success Rate", "98.5%")
+            
+            # Show session data info
+            if st.session_state.processed_invoices:
+                st.markdown("### 💾 Session Data")
+                st.success(f"{len(st.session_state.processed_invoices)} invoices in memory")
+                if st.button("📋 View Results", key="view_results"):
+                    st.session_state.show_results = True
+        
+        # Always show results if they exist in session state
+        if st.session_state.processed_invoices and st.session_state.processing_complete:
+            st.markdown("---")
+            self._display_processing_results(st.session_state.processed_invoices)
     
     def _process_uploaded_files(self, uploaded_files, custom_prompt, settings):
-        """Process uploaded files - simple version"""
+        """Process uploaded files with session state storage"""
         results = []
         progress_bar = st.progress(0)
         status_text = st.empty()
@@ -261,10 +352,14 @@ class InvoiceGeniusApp:
         status_text.empty()
         
         if results:
-            self._display_processing_results(results)
+            # Store in session state
+            st.session_state.processed_invoices = results
+            st.session_state.processing_complete = True
+            st.success(f"✅ Processing complete! {len(results)} invoices processed successfully.")
+            st.info("💡 Your data is now saved in session and available for export.")
     
     def _display_processing_results(self, results):
-        """Display the processing results"""
+        """Display processing results with enhanced export functionality"""
         st.markdown('<div class="result-section">', unsafe_allow_html=True)
         st.subheader("✅ Processing Results")
         
@@ -272,22 +367,237 @@ class InvoiceGeniusApp:
         tab1, tab2, tab3, tab4 = st.tabs(["📋 Summary", "📊 Details", "💾 Export", "🔍 Validation"])
         
         with tab1:
-            # Summary view
             self._render_results_summary(results)
         
         with tab2:
-            # Detailed view
             self._render_results_details(results)
         
         with tab3:
-            # Export options
-            self._render_export_options(results)
+            # PERSISTENT EXPORT SYSTEM
+            self._render_persistent_export_interface(results)
         
         with tab4:
-            # Validation results
             self._render_validation_results(results)
         
         st.markdown('</div>', unsafe_allow_html=True)
+    
+    def _render_persistent_export_interface(self, invoice_data):
+        """Persistent export interface that doesn't lose data on refresh"""
+        st.markdown("### 🚀 Persistent Export System")
+        st.info("💡 This data persists across page refreshes until you clear the session.")
+        
+        if not invoice_data:
+            st.error("No invoice data available to export")
+            return
+        
+        st.success(f"Ready to export {len(invoice_data)} invoices")
+        
+        # Pre-generate all export files to avoid refresh issues
+        self._prepare_export_files(invoice_data)
+        
+        # Display download options
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown('<div class="export-card">', unsafe_allow_html=True)
+            st.markdown("#### 📊 Excel Export")
+            st.write("Formatted spreadsheet with multiple sheets")
+            
+            if 'excel' in st.session_state.export_files:
+                file_data = st.session_state.export_files['excel']
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"invoices_{timestamp}.xlsx"
+                
+                # Direct download button
+                st.download_button(
+                    label="📥 Download Excel",
+                    data=file_data,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="persistent_excel_download"
+                )
+                
+                st.caption(f"File size: {len(file_data):,} bytes")
+            else:
+                st.error("Excel file not ready")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown('<div class="export-card">', unsafe_allow_html=True)
+            st.markdown("#### 📄 CSV Export")
+            st.write("Simple comma-separated values file")
+            
+            if 'csv' in st.session_state.export_files:
+                file_data = st.session_state.export_files['csv']
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"invoices_{timestamp}.csv"
+                
+                st.download_button(
+                    label="📥 Download CSV",
+                    data=file_data,
+                    file_name=filename,
+                    mime="text/csv",
+                    key="persistent_csv_download"
+                )
+                
+                st.caption(f"File size: {len(file_data):,} bytes")
+            else:
+                st.error("CSV file not ready")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown('<div class="export-card">', unsafe_allow_html=True)
+            st.markdown("#### 🗃️ JSON Export")
+            st.write("Machine-readable data format")
+            
+            if 'json' in st.session_state.export_files:
+                file_data = st.session_state.export_files['json']
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"invoices_{timestamp}.json"
+                
+                st.download_button(
+                    label="📥 Download JSON",
+                    data=file_data,
+                    file_name=filename,
+                    mime="application/json",
+                    key="persistent_json_download"
+                )
+                
+                st.caption(f"File size: {len(file_data):,} bytes")
+            else:
+                st.error("JSON file not ready")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Option to refresh export files
+        st.markdown("---")
+        if st.button("🔄 Refresh Export Files", key="refresh_exports"):
+            st.session_state.export_files = {}
+            self._prepare_export_files(invoice_data)
+            st.success("Export files refreshed!")
+            st.rerun()
+    
+    def _prepare_export_files(self, invoice_data):
+        """Pre-generate all export files and store in session state"""
+        if not st.session_state.export_files:
+            with st.spinner("Preparing export files..."):
+                try:
+                    # Generate Excel
+                    excel_data = self._export_to_excel_direct(invoice_data)
+                    if excel_data:
+                        st.session_state.export_files['excel'] = excel_data
+                    
+                    # Generate CSV
+                    csv_data = self._export_to_csv_direct(invoice_data)
+                    if csv_data:
+                        st.session_state.export_files['csv'] = csv_data
+                    
+                    # Generate JSON
+                    json_data = self._export_to_json_direct(invoice_data)
+                    if json_data:
+                        st.session_state.export_files['json'] = json_data
+                    
+                    st.session_state.last_export_time = datetime.now()
+                    
+                except Exception as e:
+                    st.error(f"Error preparing export files: {str(e)}")
+    
+    def _export_to_excel_direct(self, invoice_data):
+        """Generate Excel file directly in memory"""
+        try:
+            processed_data = []
+            for i, invoice in enumerate(invoice_data):
+                row = {
+                    'Invoice Number': str(invoice.get('invoice_number', f'Invoice_{i+1}')),
+                    'Vendor Name': str(invoice.get('vendor_name', 'Unknown')),
+                    'Invoice Date': str(invoice.get('invoice_date', '')),
+                    'Due Date': str(invoice.get('due_date', '')),
+                    'Total Amount': float(invoice.get('total_amount', 0)),
+                    'Subtotal': float(invoice.get('subtotal', 0)),
+                    'Tax Amount': float(invoice.get('tax_amount', 0)),
+                    'Currency': str(invoice.get('currency', 'USD')),
+                    'Payment Terms': str(invoice.get('payment_terms', '')),
+                    'PO Number': str(invoice.get('po_number', '')),
+                    'Confidence Score': f"{float(invoice.get('confidence', 0)):.1%}",
+                    'File Name': str(invoice.get('file_name', '')),
+                    'Processed Date': str(invoice.get('processed_at', ''))
+                }
+                processed_data.append(row)
+            
+            df = pd.DataFrame(processed_data)
+            excel_buffer = io.BytesIO()
+            
+            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Invoices', index=False)
+                
+                # Add summary sheet
+                summary_df = pd.DataFrame({
+                    'Metric': ['Total Invoices', 'Total Amount', 'Export Date', 'Export Time'],
+                    'Value': [
+                        len(df), 
+                        f"${df['Total Amount'].sum():,.2f}", 
+                        datetime.now().strftime('%Y-%m-%d'),
+                        datetime.now().strftime('%H:%M:%S')
+                    ]
+                })
+                summary_df.to_excel(writer, sheet_name='Summary', index=False)
+            
+            excel_buffer.seek(0)
+            return excel_buffer.getvalue()
+        
+        except Exception as e:
+            logger.error(f"Excel generation failed: {str(e)}")
+            return None
+    
+    def _export_to_csv_direct(self, invoice_data):
+        """Generate CSV file directly"""
+        try:
+            processed_data = []
+            for i, invoice in enumerate(invoice_data):
+                row = {
+                    'Invoice Number': str(invoice.get('invoice_number', f'Invoice_{i+1}')),
+                    'Vendor Name': str(invoice.get('vendor_name', 'Unknown')),
+                    'Invoice Date': str(invoice.get('invoice_date', '')),
+                    'Due Date': str(invoice.get('due_date', '')),
+                    'Total Amount': float(invoice.get('total_amount', 0)),
+                    'Currency': str(invoice.get('currency', 'USD')),
+                    'Payment Terms': str(invoice.get('payment_terms', '')),
+                    'PO Number': str(invoice.get('po_number', '')),
+                    'Confidence Score': float(invoice.get('confidence', 0)),
+                    'File Name': str(invoice.get('file_name', '')),
+                    'Processed Date': str(invoice.get('processed_at', ''))
+                }
+                processed_data.append(row)
+            
+            df = pd.DataFrame(processed_data)
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            return csv_buffer.getvalue().encode('utf-8')
+        
+        except Exception as e:
+            logger.error(f"CSV generation failed: {str(e)}")
+            return None
+    
+    def _export_to_json_direct(self, invoice_data):
+        """Generate JSON file directly"""
+        try:
+            export_data = {
+                'export_info': {
+                    'generated_at': datetime.now().isoformat(),
+                    'total_invoices': len(invoice_data),
+                    'generator': 'InvoiceGenius AI'
+                },
+                'invoices': invoice_data
+            }
+            
+            json_string = json.dumps(export_data, indent=2, default=str)
+            return json_string.encode('utf-8')
+        
+        except Exception as e:
+            logger.error(f"JSON generation failed: {str(e)}")
+            return None
     
     def _render_results_summary(self, results):
         """Render the results summary"""
@@ -349,119 +659,6 @@ class InvoiceGeniusApp:
                     line_items_df = pd.DataFrame(result['line_items'])
                     st.dataframe(line_items_df, use_container_width=True)
     
-    def _render_export_options(self, results):
-        """Simple export options that actually work"""
-        st.write("### 💾 Export Processed Data")
-        
-        if not results:
-            st.warning("No data to export")
-            return
-        
-        st.success(f"Ready to export {len(results)} invoices")
-        
-        # Simple direct exports
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("📊 Export Excel", key=f"excel_{datetime.now().microsecond}"):
-                excel_data = self._generate_excel_direct(results)
-                if excel_data:
-                    st.download_button(
-                        "📥 Download Excel",
-                        data=excel_data,
-                        file_name=f"invoices_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_excel_{datetime.now().microsecond}"
-                    )
-        
-        with col2:
-            if st.button("📄 Export CSV", key=f"csv_{datetime.now().microsecond}"):
-                csv_data = self._generate_csv_direct(results)
-                if csv_data:
-                    st.download_button(
-                        "📥 Download CSV",
-                        data=csv_data,
-                        file_name=f"invoices_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv",
-                        key=f"dl_csv_{datetime.now().microsecond}"
-                    )
-        
-        with col3:
-            if st.button("🗃️ Export JSON", key=f"json_{datetime.now().microsecond}"):
-                json_data = self._generate_json_direct(results)
-                if json_data:
-                    st.download_button(
-                        "📥 Download JSON",
-                        data=json_data,
-                        file_name=f"invoices_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                        mime="application/json",
-                        key=f"dl_json_{datetime.now().microsecond}"
-                    )
-    
-    def _generate_excel_direct(self, results):
-        """Generate Excel directly"""
-        try:
-            import pandas as pd
-            import io
-            
-            data = []
-            for r in results:
-                data.append({
-                    'Invoice_Number': str(r.get('invoice_number', '')),
-                    'Vendor_Name': str(r.get('vendor_name', '')),
-                    'Total_Amount': float(r.get('total_amount', 0)) if r.get('total_amount') else 0,
-                    'Currency': str(r.get('currency', 'USD')),
-                    'Date': str(r.get('invoice_date', '')),
-                    'File_Name': str(r.get('file_name', ''))
-                })
-            
-            df = pd.DataFrame(data)
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False)
-            buffer.seek(0)
-            return buffer.getvalue()
-        except Exception as e:
-            st.error(f"Excel failed: {str(e)}")
-            return None
-    
-    def _generate_csv_direct(self, results):
-        """Generate CSV directly"""
-        try:
-            import pandas as pd
-            import io
-            
-            data = []
-            for r in results:
-                data.append({
-                    'Invoice_Number': str(r.get('invoice_number', '')),
-                    'Vendor_Name': str(r.get('vendor_name', '')),
-                    'Total_Amount': float(r.get('total_amount', 0)) if r.get('total_amount') else 0,
-                    'Currency': str(r.get('currency', 'USD')),
-                    'Date': str(r.get('invoice_date', '')),
-                    'File_Name': str(r.get('file_name', ''))
-                })
-            
-            df = pd.DataFrame(data)
-            return df.to_csv(index=False).encode('utf-8')
-        except Exception as e:
-            st.error(f"CSV failed: {str(e)}")
-            return None
-    
-    def _generate_json_direct(self, results):
-        """Generate JSON directly"""
-        try:
-            import json
-            export_data = {
-                'generated_at': datetime.now().isoformat(),
-                'total_invoices': len(results),
-                'invoices': results
-            }
-            return json.dumps(export_data, indent=2, default=str).encode('utf-8')
-        except Exception as e:
-            st.error(f"JSON failed: {str(e)}")
-            return None
-    
     def _render_validation_results(self, results):
         """Render validation results"""
         st.write("### 🔍 Validation & Quality Check")
@@ -490,7 +687,6 @@ class InvoiceGeniusApp:
         """Render the analytics dashboard"""
         st.subheader("📊 Analytics Dashboard")
         
-        # Get analytics data
         analytics_data = self.analytics.get_dashboard_data()
         
         # Key metrics
@@ -526,7 +722,6 @@ class InvoiceGeniusApp:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Monthly trend
             monthly_data = self.analytics.get_monthly_trend()
             if monthly_data:
                 fig = px.line(
@@ -538,7 +733,6 @@ class InvoiceGeniusApp:
                 st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            # Vendor distribution
             vendor_data = self.analytics.get_vendor_distribution()
             if vendor_data:
                 fig = px.pie(
@@ -556,16 +750,40 @@ class InvoiceGeniusApp:
             df = pd.DataFrame(recent_invoices)
             st.dataframe(df, use_container_width=True)
     
+    def render_export_center(self):
+        """Export center for database exports with persistent system"""
+        st.subheader("💾 Export Center")
+        
+        all_invoices = self.db_manager.get_all_invoices()
+        
+        if not all_invoices:
+            st.info("No invoices found. Process some invoices first!")
+            return
+        
+        st.write(f"📊 Total invoices: {len(all_invoices)}")
+        
+        # Option to load database data into session for export
+        if st.button("📂 Load Database Data for Export", key="load_db_data"):
+            st.session_state.processed_invoices = all_invoices
+            st.session_state.processing_complete = True
+            st.session_state.export_files = {}  # Clear existing export files
+            st.success(f"Loaded {len(all_invoices)} invoices from database into session!")
+            st.info("You can now export this data using the persistent export system below.")
+        
+        # Show export interface if data is loaded
+        if st.session_state.processed_invoices:
+            st.markdown("---")
+            self._render_persistent_export_interface(st.session_state.processed_invoices)
+    
     def render_batch_processing_page(self):
         """Render the batch processing page"""
         st.subheader("⚡ Batch Processing")
         
         st.info("Upload multiple invoices or a ZIP file containing invoices for bulk processing.")
         
-        # Upload options
         upload_option = st.radio(
             "Choose upload method:",
-            ["Multiple Files", "ZIP Archive", "Folder Upload"]
+            ["Multiple Files", "ZIP Archive"]
         )
         
         if upload_option == "Multiple Files":
@@ -580,24 +798,13 @@ class InvoiceGeniusApp:
                 
                 if st.button("🚀 Start Batch Processing"):
                     self._run_batch_processing(uploaded_files)
-        
-        elif upload_option == "ZIP Archive":
-            zip_file = st.file_uploader(
-                "Upload ZIP file containing invoices",
-                type=["zip"]
-            )
-            
-            if zip_file:
-                if st.button("📦 Extract and Process ZIP"):
-                    self._process_zip_file(zip_file)
     
     def _run_batch_processing(self, files):
-        """Run batch processing on multiple files"""
+        """Run batch processing with session state storage"""
         st.write("### 🔄 Batch Processing in Progress...")
         
         progress_bar = st.progress(0)
         status_text = st.empty()
-        results_container = st.empty()
         
         results = []
         failed_files = []
@@ -620,10 +827,15 @@ class InvoiceGeniusApp:
                 failed_files.append(file.name)
                 logger.error(f"Batch processing error for {file.name}: {str(e)}")
         
-        # Show final results
         progress_bar.empty()
         status_text.empty()
         
+        # Store results in session state
+        st.session_state.processed_invoices = results
+        st.session_state.processing_complete = True
+        st.session_state.export_files = {}  # Clear existing export files
+        
+        # Show results
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("✅ Successful", len(results))
@@ -639,59 +851,34 @@ class InvoiceGeniusApp:
         
         if results:
             st.success(f"Batch processing completed! {len(results)} invoices processed successfully.")
-            self._display_processing_results(results)
-    
-    def run(self):
-        """Main application entry point"""
-        # Configure page
-        st.set_page_config(
-            page_title="InvoiceGenius AI",
-            page_icon="🤖",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-        
-        # Load custom CSS
-        self.load_custom_css()
-        
-        # Render header
-        self.render_header()
-        
-        # Render sidebar and get settings
-        settings = self.render_sidebar()
-        
-        # Route to appropriate page
-        if settings['page'] == "Invoice Processing":
-            self.render_invoice_processing_page(settings)
-        elif settings['page'] == "Analytics Dashboard":
-            self.render_analytics_dashboard()
-        elif settings['page'] == "Batch Processing":
-            self.render_batch_processing_page()
-        elif settings['page'] == "Export Center":
-            self.render_export_center()
-        elif settings['page'] == "Settings":
-            self.render_settings_page()
-    
-    def render_export_center(self):
-        """Simple export center that just works"""
-        st.subheader("💾 Export Center")
-        
-        all_invoices = self.db_manager.get_all_invoices()
-        
-        if not all_invoices:
-            st.info("No invoices found. Process some invoices first!")
-            return
-        
-        st.write(f"📊 Total invoices: {len(all_invoices)}")
-        
-        # Simple export interface
-        self._render_export_options(all_invoices)
+            st.info("💡 Results are now available in session state for export.")
     
     def render_settings_page(self):
         """Render the settings page"""
         st.subheader("⚙️ Application Settings")
         
-        st.info("🔒 Security Note: API keys are managed through environment variables for security. Please update your .env file directly to change API configuration.")
+        # Session State Management
+        with st.expander("💾 Session State Management"):
+            st.write("**Current Session State:**")
+            st.write(f"• Processed invoices: {len(st.session_state.processed_invoices)}")
+            st.write(f"• Processing complete: {st.session_state.processing_complete}")
+            st.write(f"• Export files ready: {len(st.session_state.export_files)}")
+            
+            if st.session_state.last_export_time:
+                st.write(f"• Last export preparation: {st.session_state.last_export_time}")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🧹 Clear Session State"):
+                    for key in ['processed_invoices', 'processing_complete', 'export_files', 'last_export_time']:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    st.success("Session state cleared!")
+                    st.rerun()
+            
+            with col2:
+                if st.button("📊 View Session Details"):
+                    st.json(dict(st.session_state))
         
         # Database Management
         with st.expander("🗄️ Database Management"):
@@ -723,17 +910,37 @@ class InvoiceGeniusApp:
             st.write(f"• Debug Mode: {os.getenv('DEBUG', 'false').lower() == 'true'}")
             st.write(f"• Max File Size: {os.getenv('MAX_FILE_SIZE_MB', '50')} MB")
             st.write(f"• Default Model: {os.getenv('DEFAULT_GEMINI_MODEL', 'gemini-1.5-pro-latest')}")
-            
-            st.info("💡 To modify these settings, update your .env file and restart the application.")
+
+    def run(self):
+        """Main application entry point"""
+        # Configure page
+        st.set_page_config(
+            page_title="InvoiceGenius AI",
+            page_icon="🤖",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
         
-        # Application Logs
-        with st.expander("📋 Application Logs"):
-            if os.path.exists("logs/app.log"):
-                with open("logs/app.log", "r") as f:
-                    logs = f.read()
-                st.text_area("Recent Logs", logs, height=300)
-            else:
-                st.info("No logs available")
+        # Load custom CSS
+        self.load_custom_css()
+        
+        # Render header
+        self.render_header()
+        
+        # Render sidebar and get settings
+        settings = self.render_sidebar()
+        
+        # Route to appropriate page
+        if settings['page'] == "Invoice Processing":
+            self.render_invoice_processing_page(settings)
+        elif settings['page'] == "Analytics Dashboard":
+            self.render_analytics_dashboard()
+        elif settings['page'] == "Batch Processing":
+            self.render_batch_processing_page()
+        elif settings['page'] == "Export Center":
+            self.render_export_center()
+        elif settings['page'] == "Settings":
+            self.render_settings_page()
 
 # Application entry point
 if __name__ == "__main__":

@@ -438,3 +438,85 @@
 2025-06-25 22:15:44,241 - INFO - Export manager initialized
 2025-06-25 22:15:44,244 - INFO - Simplified input validator initialized
 2025-06-25 22:15:44,244 - INFO - Analytics engine initialized
+2025-06-25 22:26:15,120 - INFO - Gemini AI configured successfully
+2025-06-25 22:26:15,120 - INFO - Initialized 3 AI models
+2025-06-25 22:26:15,126 - INFO - Database schema initialized successfully
+2025-06-25 22:26:15,128 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:26:15,133 - INFO - Export manager initialized
+2025-06-25 22:26:15,136 - INFO - Simplified input validator initialized
+2025-06-25 22:26:15,138 - INFO - Analytics engine initialized
+2025-06-25 22:26:34,694 - INFO - Gemini AI configured successfully
+2025-06-25 22:26:34,696 - INFO - Initialized 3 AI models
+2025-06-25 22:26:34,704 - INFO - Database schema initialized successfully
+2025-06-25 22:26:34,706 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:26:34,712 - INFO - Export manager initialized
+2025-06-25 22:26:34,718 - INFO - Simplified input validator initialized
+2025-06-25 22:26:34,722 - INFO - Analytics engine initialized
+2025-06-25 22:26:36,831 - INFO - Gemini AI configured successfully
+2025-06-25 22:26:36,833 - INFO - Initialized 3 AI models
+2025-06-25 22:26:36,835 - INFO - Database schema initialized successfully
+2025-06-25 22:26:36,835 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:26:36,846 - INFO - Export manager initialized
+2025-06-25 22:26:36,855 - INFO - Simplified input validator initialized
+2025-06-25 22:26:36,859 - INFO - Analytics engine initialized
+2025-06-25 22:26:36,908 - INFO - File validation passed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:26:47,184 - INFO - Successfully processed invoice: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:26:47,200 - INFO - Saved invoice to database with ID: 11
+2025-06-25 22:26:47,200 - INFO - Successfully processed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:27:07,470 - INFO - Gemini AI configured successfully
+2025-06-25 22:27:07,470 - INFO - Initialized 3 AI models
+2025-06-25 22:27:07,477 - INFO - Database schema initialized successfully
+2025-06-25 22:27:07,477 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:27:07,484 - INFO - Export manager initialized
+2025-06-25 22:27:07,490 - INFO - Simplified input validator initialized
+2025-06-25 22:27:07,496 - INFO - Analytics engine initialized
+2025-06-25 22:27:13,953 - INFO - Gemini AI configured successfully
+2025-06-25 22:27:13,953 - INFO - Initialized 3 AI models
+2025-06-25 22:27:13,966 - INFO - Database schema initialized successfully
+2025-06-25 22:27:13,970 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:27:13,980 - INFO - Export manager initialized
+2025-06-25 22:27:13,986 - INFO - Simplified input validator initialized
+2025-06-25 22:27:13,992 - INFO - Analytics engine initialized
+2025-06-25 22:27:14,080 - INFO - File validation passed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:27:24,465 - INFO - Successfully processed invoice: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:27:24,476 - INFO - Saved invoice to database with ID: 12
+2025-06-25 22:27:24,503 - INFO - Successfully processed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:27:27,890 - INFO - Gemini AI configured successfully
+2025-06-25 22:27:27,892 - INFO - Initialized 3 AI models
+2025-06-25 22:27:27,903 - INFO - Database schema initialized successfully
+2025-06-25 22:27:27,908 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:27:27,917 - INFO - Export manager initialized
+2025-06-25 22:27:27,921 - INFO - Simplified input validator initialized
+2025-06-25 22:27:27,928 - INFO - Analytics engine initialized
+2025-06-25 22:32:35,356 - INFO - Gemini AI configured successfully
+2025-06-25 22:32:35,356 - INFO - Initialized 3 AI models
+2025-06-25 22:32:35,365 - INFO - Database schema initialized successfully
+2025-06-25 22:32:35,365 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:32:35,372 - INFO - Export manager initialized
+2025-06-25 22:32:35,377 - INFO - Simplified input validator initialized
+2025-06-25 22:32:35,377 - INFO - Analytics engine initialized
+2025-06-25 22:32:51,365 - INFO - Gemini AI configured successfully
+2025-06-25 22:32:51,365 - INFO - Initialized 3 AI models
+2025-06-25 22:32:51,372 - INFO - Database schema initialized successfully
+2025-06-25 22:32:51,372 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:32:51,379 - INFO - Export manager initialized
+2025-06-25 22:32:51,384 - INFO - Simplified input validator initialized
+2025-06-25 22:32:51,389 - INFO - Analytics engine initialized
+2025-06-25 22:32:53,453 - INFO - Gemini AI configured successfully
+2025-06-25 22:32:53,455 - INFO - Initialized 3 AI models
+2025-06-25 22:32:53,465 - INFO - Database schema initialized successfully
+2025-06-25 22:32:53,467 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:32:53,475 - INFO - Export manager initialized
+2025-06-25 22:32:53,479 - INFO - Simplified input validator initialized
+2025-06-25 22:32:53,486 - INFO - Analytics engine initialized
+2025-06-25 22:32:53,541 - INFO - File validation passed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:33:03,820 - INFO - Successfully processed invoice: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:33:03,844 - INFO - Saved invoice to database with ID: 13
+2025-06-25 22:33:03,844 - INFO - Successfully processed: GST-Invoice-Template-In-Hindi.jpg
+2025-06-25 22:33:11,714 - INFO - Gemini AI configured successfully
+2025-06-25 22:33:11,716 - INFO - Initialized 3 AI models
+2025-06-25 22:33:11,732 - INFO - Database schema initialized successfully
+2025-06-25 22:33:11,734 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:33:11,740 - INFO - Export manager initialized
+2025-06-25 22:33:11,748 - INFO - Simplified input validator initialized
+2025-06-25 22:33:11,755 - INFO - Analytics engine initialized
