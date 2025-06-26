@@ -520,3 +520,10 @@
 2025-06-25 22:33:11,740 - INFO - Export manager initialized
 2025-06-25 22:33:11,748 - INFO - Simplified input validator initialized
 2025-06-25 22:33:11,755 - INFO - Analytics engine initialized
+2025-06-25 22:33:25,427 - INFO - Gemini AI configured successfully
+2025-06-25 22:33:25,427 - INFO - Initialized 3 AI models
+2025-06-25 22:33:25,435 - INFO - Database schema initialized successfully
+2025-06-25 22:33:25,435 - INFO - Database manager initialized: E:\Google Gemini Projects\InvoiceGenius-AI\data\invoices.db
+2025-06-25 22:33:25,447 - INFO - Export manager initialized
+2025-06-25 22:33:25,449 - INFO - Simplified input validator initialized
+2025-06-25 22:33:25,455 - INFO - Analytics engine initialized
